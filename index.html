@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Small Surprise For You</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #000;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            transition: background 1.5s ease;
+            position: relative;
+        }
+
+        /* --- Aesthetic Pink Blurred Heart Background --- */
+        body.pink-theme {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #feada6 100%);
+            color: #333;
+        }
+
+        .bg-heart {
+            position: absolute;
+            width: 350px;
+            height: 350px;
+            background: rgba(255, 75, 114, 0.45);
+            transform: rotate(-45deg);
+            top: calc(50% - 175px);
+            left: calc(50% - 175px);
+            filter: blur(60px);
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .bg-heart::before,
+        .bg-heart::after {
+            content: "";
+            position: absolute;
+            width: 350px;
+            height: 350px;
+            background: rgba(255, 75, 114, 0.45);
+            border-radius: 50%;
+        }
+
+        .bg-heart::before {
+            top: -175px;
+            left: 0;
+        }
+
+        .bg-heart::after {
+            left: 175px;
+            top: 0;
+        }
+
+        body.pink-theme .bg-heart {
+            opacity: 1;
+        }
+
+        /* --- Container & Cards --- */
+        .container {
+            position: relative;
+            z-index: 10;
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .step {
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .step.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- Popup Modal for Intro --- */
+        .popup-box {
+            background: rgba(20, 20, 20, 0.95);
+            border: 1px solid #333;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            animation: fadeIn 1s forwards;
+        }
+
+        .popup-box h2 {
+            font-size: 1.8rem;
+            color: #ff758c;
+            margin-bottom: 15px;
+        }
+
+        /* --- Pink Theme Glassmorphism Cards --- */
+        .card {
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(12px);
+            border-radius: 25px;
+            padding: 30px 25px;
+            box-shadow: 0 15px 35px rgba(255, 75, 114, 0.2);
+            color: #4a4a4a;
+            position: relative;
+        }
+
+        .card h1 {
+            color: #d63384;
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+        }
+
+        .card h2 {
+            color: #ff4b72;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+
+        .card p {
+            font-size: 1.15rem;
+            line-height: 1.7;
+            color: #444;
+            margin-bottom: 15px;
+        }
+
+        /* --- Guaranteed Scroll Container --- */
+        .scroll-content {
+            max-height: 300px;
+            overflow-y: scroll !important;
+            padding-right: 10px;
+            text-align: left;
+            white-space: pre-line;
+            display: block;
+        }
+
+        /* Scrollbar Styling */
+        .scroll-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .scroll-content::-webkit-scrollbar-track {
+            background: rgba(255, 182, 193, 0.3);
+            border-radius: 10px;
+        }
+
+        .scroll-content::-webkit-scrollbar-thumb {
+            background: #ff4b72;
+            border-radius: 10px;
+        }
+
+        /* --- Corner Decorations --- */
+        .corner-decor-top-left {
+            position: absolute;
+            top: -20px;
+            left: -15px;
+            font-size: 2.2rem;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .corner-decor-top-right {
+            position: absolute;
+            top: -20px;
+            right: -15px;
+            font-size: 2.2rem;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .corner-decor-bottom-right {
+            position: absolute;
+            bottom: -15px;
+            right: -15px;
+            font-size: 2.2rem;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        /* --- Memory List --- */
+        .memory-list {
+            text-align: left;
+            margin: 20px 0;
+            list-style: none;
+        }
+
+        .memory-list li {
+            font-size: 1.05rem;
+            padding: 10px 0;
+            border-bottom: 1px dashed rgba(214, 51, 132, 0.3);
+            display: flex;
+            align-items: center;
+        }
+
+        .memory-list li span {
+            margin-right: 10px;
+            font-size: 1.3rem;
+        }
+
+        /* --- Input Form --- */
+        textarea {
+            width: 100%;
+            height: 100px;
+            border-radius: 15px;
+            border: 2px solid #ffb6c1;
+            padding: 12px;
+            font-size: 1rem;
+            outline: none;
+            resize: none;
+            margin-top: 15px;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            border-color: #ff4b72;
+        }
+
+        /* --- Next Button Styling --- */
+        .btn-next-bottom {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 100;
+            background: linear-gradient(45deg, #ff4b72, #ff758c);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(255, 75, 114, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .btn-next-bottom:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(255, 75, 114, 0.6);
+        }
+
+        .btn-send {
+            background: linear-gradient(45deg, #ff4b72, #ff758c);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(255, 75, 114, 0.3);
+        }
+
+        .btn-send:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 75, 114, 0.5);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="bgMusic" loop>
+        <source src="song.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="bg-heart"></div>
+
+    <div class="container">
+        <div id="step1" class="step active">
+            <div class="popup-box">
+                <h2> Computer project work ig LOL</h2>
+                <p style="color: #aaa;">Turn up your volume and click next...</p>
+            </div>
+        </div>
+
+        <div id="step2" class="step">
+            <div class="card">
+                <h1>Happyyyy Girlfriend's Dayyyyy Grishnaaaaaaaaaaa !</h1>
+                <p> Okay so 3.. 2.. 1.. Beautifull girlllll ahahahaha idk timing milyo ki nai but i hope milyo hehehehe
+                 Yayayayayayaya GRISHNAAAAAA Today is a special dayyyyy, and this is just a small gift from me to youuuuuu yourrrrrr irissssss.</p>
+                <p>Honestly, this is nothing compared to what you deserveeeee you are meant to be loved more and more every single day bewwww!</p>
+            </div>
+        </div>
+
+        <div id="step3" class="step">
+            <div class="card">
+                <div class="corner-decor-top-left">🧸🌸</div>
+                <div class="corner-decor-top-right">🌸🧸</div>
+
+                <h2>My Louve For You Heheheh💌</h2>
+                
+                <div class="scroll-content">
+ON THISSSS SPECIAL DAY OF YOURSSS I WANTED TO SAYYY THATTTT From the moment you entered my life, everything became brighter and better. Thank you for being my happiest thought, my biggest comfort, and my favorite person. I love you more than words can express!!!!!!
+                </div>
+            </div>
+        </div>
+
+        <div id="step4" class="step">
+            <div class="card">
+                <div class="corner-decor-top-left">🧸</div>
+                <div class="corner-decor-bottom-right">🧸</div>
+
+                <h2>SANO MESSAGE AHAHAHAA💌</h2>
+                
+                <div class="scroll-content">
+My Dearest Princess, ❤️
+
+Happy Girlfriend's Day, my loveeee.
+
+Today is a special day, but to me, every day with you feels special because you're the one who makes my day brighter every single time. No matter how my day goes, just seeing your smile, talking to you, or even thinking about you makes everything better. You are truly the best part of my life.
+
+
+I'm so thankful for your love. Thank you for caring for me, supporting me, believing in me, making me laugh, and standing beside me through everything. I appreciate every little thing you do for me more than I can ever explain. Your love has changed me in so many beautiful ways, and I'm grateful every single day that I have you.
+
+
+I still remember the first time we started falling in love. I remember playing my guitar during the school assembly, and even today, that memory makes me smile. At that time, I never imagined that one day the most beautiful girl would become such an important part of my life. Looking back now, it feels like destiny was quietly writing our story from the very beginning.
+
+
+You know something? The day I met you was the day I truly started dreaming. Before you, dreams were just dreams. But after you came into my life, I started dreaming about our future, our memories, our laughter, and all the beautiful moments we still have waiting for us. You gave my life a new meaning, and every dream I have now somehow includes you.
+
+
+I started making this little website two days ago, and today I finally completed it. It isn't perfect, and it isn't enough to show how much you mean to me, but every part of it was made with love. Every line, every color, every little detail reminds me of you. This is just a small gift from my heart to yours.
+
+
+I know this website is nothing compared to everything you've given me. Your love, your kindness, your patience, your smile, your hugs, and the happiness you bring into my life are worth so much more. Still, I hope this little surprise makes you smile because making you happy is one of my favorite things in the world.
+
+
+Thank you for choosing me. Thank you for loving me even with all my imperfections. Thank you for staying by my side and making every ordinary day feel extraordinary.
+
+
+No matter where life takes us, I want you to remember one thing: I will always be here for you. I will continue to love you, support you, cheer for you, and make beautiful memories with you.
+
+
+I love you so much, more than words can ever describe. I love you today, tomorrow, and forever. You'll always be my Princess, my happiness, my safe place, and the greatest blessing I've ever received.
+
+
+Happy Girlfriend's Day, my love. I hope this little website reminds you of how deeply you're loved.
+
+
+Forever and always,
+
+**Your Riyan** ❤️
+                </div>
+            </div>
+        </div>
+
+        <div id="step5" class="step">
+            <div class="card">
+                <h2>Our Memories & Promises 💫</h2>
+                <ul class="memory-list">
+                    <li><span>📱</span> Late night texts blahh blahh blahhhh </li>
+                    <li><span>🍜</span> Bambooo bahahahahahahahahah yummyyy</li>
+                    <li><span>🎬</span> Netflix and chill ummhmm ahahahahaha</li>
+                    <li><span>🏫</span> Unforgettable moments at school hehehe</li>
+                    <li><span>💖</span> My promise to always stay by your side</li>
+                    <li><span>💖</span> I promise to support your dreams and always cheer for your success</li>
+                    <li><span>💖</span> I promise to love you even if thereare littleups and down</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="step6" class="step">
+            <div class="card">
+                <h2>One Last Question... 🎁</h2>
+                <p><strong>K lyaidim ta motu lai papa mondayy ???????</strong></p>
+                <textarea id="userInput" placeholder="Write whatever your heart desires ahahahaha..."></textarea>
+                <br>
+                <button class="btn-send" onclick="submitAnswer()">Send 💌</button>
+            </div>
+        </div>
+    </div>
+
+    <button id="nextBtn" class="btn-next-bottom" onclick="nextStep()">Next ➔</button>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 6;
+
+        function nextStep() {
+            if (currentStep === 1) {
+                const music = document.getElementById('bgMusic');
+                music.play().catch(e => console.log("Audio autoplay prevented: ", e));
+
+                document.body.classList.add('pink-theme');
+
+                confetti({
+                    particleCount: 120,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+
+                transitionToStep(2);
+            } else if (currentStep < totalSteps) {
+                let next = currentStep + 1;
+                transitionToStep(next);
+
+                if (next === totalSteps) {
+                    document.getElementById('nextBtn').style.display = 'none';
+                }
+            }
+        }
+
+        function transitionToStep(stepNumber) {
+            document.getElementById(`step${currentStep}`).classList.remove('active');
+            
+            setTimeout(() => {
+                document.getElementById(`step${currentStep}`).style.display = 'none';
+                currentStep = stepNumber;
+                const nextStepElem = document.getElementById(`step${currentStep}`);
+                nextStepElem.style.display = 'block';
+                
+                setTimeout(() => {
+                    nextStepElem.classList.add('active');
+                }, 50);
+            }, 400);
+        }
+
+        function submitAnswer() {
+            const answer = document.getElementById('userInput').value;
+            if (answer.trim() === "") {
+                alert("Please write something first! ❤️");
+                return;
+            }
+            
+            alert("Your message has been sent! ❤️ I love you!");
+            window.location.href = `mailto:kraitdon@gmail.com?subject=My Wish For Girlfriend's Day&body=${encodeURIComponent(answer)}`;
+        }
+    </script>
+</body>
+</html>
